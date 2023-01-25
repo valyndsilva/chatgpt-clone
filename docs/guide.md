@@ -2220,3 +2220,574 @@ By default Model:"text-davinci-002" and Temperature:"0.7".
 You can select a model of your choice and set the temperature.
 
 Test example: Hi. Can you create a sitemap for a coffee shop website and also create some copy for each page?
+
+## Implementing Authentication using Next-Auth:
+
+### Install Next-Auth
+
+```
+npm install next-auth
+```
+
+### Setup Firebase:
+
+Go to https://console.firebase.google.com/ Add new project: amazon-clone > Continue Project settings > </> (Click on the web icon to Add Firebase to your web app) Register app: amazon-clone > Register app
+
+```
+npm install firebase
+```
+
+#### Create firebaseConfig.ts in the root:
+
+Copy the code provided by firebase to initialize Firebase and begin using the SDKs for the products you'd like to use.
+
+```
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDdm8pNWZ03UGdqPGszfdzboy68HykA5zs",
+  authDomain: "chatgpt-clone-cba9d.firebaseapp.com",
+  projectId: "chatgpt-clone-cba9d",
+  storageBucket: "chatgpt-clone-cba9d.appspot.com",
+  messagingSenderId: "886038362633",
+  appId: "1:886038362633:web:74819ee802b5a7568816d8",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+```
+
+### Generate NEXT SECRET to use as JWT_SECRET in .env.local:
+
+openssl rand -base64 32
+
+### Create pages/ap/auth/[...nextauth].tsx:
+
+```
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+
+export default NextAuth({
+  providers: [
+    // OAuth authentication providers...
+    GoogleProvider({
+      clientId: process.env.GOOGLE_ID as string,
+      clientSecret: process.env.GOOGLE_SECRET as string,
+    }),
+  ],
+  secret: process.env.JWT_SECRET,
+});
+
+```
+
+### Google Authentication
+
+Next go to Build > Authentication > Get Started >Sign-in providers: Google > Choose Project support email > Save
+
+Update pages/\_app.tsx:
+
+```
+import "../styles/globals.css";
+import type { AppProps } from "next/app";
+import { ChatProvider } from "../context/ChatContext";
+import { SessionProvider } from "next-auth/react";
+import { Session } from "next-auth";
+import { useEffect, useState } from "react";
+
+function MyApp({
+  Component,
+  pageProps,
+}: AppProps<{
+  session: Session;
+}>) {
+  // To fix hydration UI mismatch issues, we need to wait until the component has mounted.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!mounted) return null;
+  return (
+    <SessionProvider session={pageProps.session}>
+      <ChatProvider>
+        <Component {...pageProps} />
+      </ChatProvider>
+    </SessionProvider>
+  );
+}
+
+export default MyApp;
+
+```
+
+#### Usage Example:
+
+```
+import { useSession, signIn, signOut } from "next-auth/react"
+
+export default function Component() {
+  const { data: session } = useSession()
+  if(session) {
+    return <>
+      Signed in as {session.user.email} <br/>
+      <button onClick={() => signOut()}>Sign out</button>
+    </>
+  }
+  return <>
+    Not signed in <br/>
+    <button onClick={() => signIn()}>Sign in</button>
+  </>
+}
+```
+
+### Update components/Sidebar.tsx:
+
+```
+import React, { useContext, useEffect } from "react";
+import {
+  ArrowRightOnRectangleIcon,
+  ArrowTopRightOnSquareIcon,
+  ChatBubbleOvalLeftIcon,
+  PlusIcon,
+  SunIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
+import { ChatContext } from "../context/ChatContext";
+import { useSession, signIn, signOut } from "next-auth/react";
+type Props = {};
+
+function Sidebar({}: Props) {
+  const {
+    setChatLog,
+    models,
+    setModels,
+    currentModel,
+    setCurrentModel,
+    temperature,
+    setTemperature,
+  } = useContext(ChatContext);
+
+  const clearChat = () => {
+    setChatLog([]);
+    localStorage.clear();
+  };
+  const getEngines = async () => {
+    const response = await fetch("/api/models");
+    const data = await response.json();
+    // console.log(data.models);
+    setModels(data.models);
+  };
+  // Run once on app load
+  useEffect(() => {
+    getEngines();
+  }, []);
+
+  const { data: session } = useSession();
+  console.log(session);
+  return (
+    <aside className="sidemenu w-80 text-white bg-[#202123] text-left flex flex-col justify-between">
+      <div>
+        {/* New Chat */}
+        <div
+          className="sidemenu-btn m-2 border border-gray-700 rounded-lg"
+          onClick={clearChat}
+        >
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"}`}
+          >
+            <PlusIcon className="w-4 h-4" />{" "}
+            <span className="text-sm">New chat</span>
+          </button>
+        </div>
+        {/* Select a Model */}
+        <div className="models m-2 space-y-2">
+          <h4 className="p-1 text-md">Model</h4>
+          <select
+            disabled={!session}
+            onChange={(e) => setCurrentModel(e.target.value)}
+            value={currentModel}
+            className={`w-full p-3 m-0 text-sm text-white bg-[#202123] border border-gray-700 rounded-lg transition ease-in-out focus:text-white focus:bg-[#202123] focus:border focus:outline-none ${
+              !session &&
+              "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"
+            }`}
+          >
+            {models &&
+              models?.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.id}
+                </option>
+              ))}
+          </select>
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
+            onClick={() => setCurrentModel("text-davinci-003")}
+          >
+            <span className="text-sm">Smart - Davinci</span>
+          </button>
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
+            onClick={() => setCurrentModel("code-cushman-001")}
+          >
+            <span className="text-sm">Code - Cushman</span>
+          </button>
+          <p className="text-xs p-1">
+            The model parameter controls the engine used to generate the
+            response. Davinci produces the best results.
+          </p>
+        </div>
+        {/* Select Temperature Parameter */}
+        <div className="temperature m-2 space-y-2">
+          <div className="flex w-full items-center justify-between">
+            <h4 className="p-1 text-md">Temperature</h4>{" "}
+            <span className="text-sm p-3 border border-gray-700 rounded-lg">
+              {temperature}
+            </span>
+          </div>
+          <div className="rounded-lg shadow-lg max-w-[300px]">
+            <div className="py-2 px-4">
+              <input
+                disabled={!session}
+                className={`w-full accent-indigo-600 cursor-pointer ${
+                  !session &&
+                  "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+                }`}
+                type="range"
+                name="temperature"
+                value={temperature}
+                min="0.1"
+                max="1"
+                onChange={(e) => setTemperature(e.target.value)}
+                step="0.1"
+              />
+              <div className="-mt-2 flex w-full justify-between">
+                <span className="text-sm text-gray-600">0</span>
+                <span className="text-sm text-gray-600">1</span>
+              </div>
+            </div>
+          </div>
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
+            onClick={() => setTemperature("0")}
+          >
+            <span className="text-sm">0 - Deterministic & Repetitive</span>
+          </button>
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
+            onClick={() => setTemperature("0.5")}
+          >
+            <span className="text-sm">0.5 - Balanced</span>
+          </button>
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
+            onClick={() => setTemperature("1")}
+          >
+            <span className="text-sm">1 - Creative</span>
+          </button>
+          <p className="text-xs p-1">
+            The temperature parameter controls the randomness of the model. 0 is
+            the most deterministic, 1 is the most creative.
+          </p>
+        </div>
+      </div>
+      <div className="sidemenu-btn m-2  border-t py-2">
+        {session && (
+          <button
+            className="flex w-full items-center space-x-3 p-3 rounded-md hover:bg-white/10"
+            onClick={clearChat}
+          >
+            <TrashIcon className="w-4 h-4" />{" "}
+            <span className="text-sm">Clear conversations</span>
+          </button>
+        )}
+
+        <button
+          className="flex w-full items-center space-x-3 p-3 rounded-md hover:bg-white/10"
+          onClick={!session ? () => signIn() : () => signOut()}
+        >
+          <ArrowRightOnRectangleIcon className="w-4 h-4" />{" "}
+          {session ? (
+            <span className="text-sm">Log out</span>
+          ) : (
+            <span className="text-sm">Log In</span>
+          )}
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+export default Sidebar;
+
+```
+
+### Update components/ChatContainer.tsx:
+
+```
+import {
+  BoltIcon,
+  ExclamationTriangleIcon,
+  SunIcon,
+} from "@heroicons/react/24/outline";
+import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
+import React, { useContext, useEffect, useRef } from "react";
+import { ChatContext } from "../context/ChatContext";
+import ChatMessage from "./ChatMessage";
+import { v4 } from "uuid";
+import { useSession } from "next-auth/react";
+
+interface Props {}
+
+function ChatContainer({}: Props) {
+  const {
+    input,
+    setInput,
+    chatLog,
+    setChatLog,
+    currentModel,
+    temperature,
+    setUniqueId,
+  } = useContext(ChatContext);
+
+  const { data: session } = useSession();
+  console.log(session);
+
+  const chatRef = useRef<any>();
+  const formRef = useRef<any>();
+  const messagesEndRef = useRef<any>();
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatLog]);
+
+  // handleSubmit functionality
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    // console.log("handleSubmit triggered!");
+
+    const uuId = v4();
+    // console.log(uuId);
+
+    const uniqueUserId = "USER_" + uuId;
+    // console.log({ uniqueUserId });
+
+    const newChatLog = [
+      ...chatLog,
+      { user: "me", messageId: `${uniqueUserId}`, message: `${input}` },
+    ];
+    // console.log({ newChatLog });
+    setInput("");
+    setChatLog(newChatLog);
+    // console.log({ chatLog });
+    const messages = newChatLog
+      .map((message: { message: any }) => message.message)
+      .join("\n");
+
+    //fetch response to the api combining the chat log array of messages and sending it as a message to localhost:3000 as a post
+    const response = await fetch("/api/chatgpt", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: messages,
+        currentModel,
+        temperature,
+      }),
+    });
+    const data = await response.json();
+    // console.log(data.suggestion);
+    const botMessage = data.suggestion.trim(); // trims any trailing spaces/'\n'
+
+    const uniqueAiId = "AI_" + uuId;
+    // console.log({ uniqueAiId });
+    setUniqueId(uniqueAiId);
+
+    setChatLog([
+      ...newChatLog,
+      {
+        user: "gpt",
+        messageId: `${uniqueAiId}`,
+        message: `${botMessage}`,
+      },
+    ]); // trims any trailing spaces/'\n'
+  };
+
+  // Getting chatLog stored value from localStorage and loading it into React state
+  useEffect(() => {
+    const data: any = window.localStorage.getItem("chatLogs");
+    if (data) setChatLog(JSON.parse(data));
+  }, []);
+  // Storing chatLog state in localStorage
+  useEffect(() => {
+    if (chatLog.length > 0)
+      window.localStorage.setItem("chatLogs", JSON.stringify(chatLog));
+  }, [chatLog]);
+
+  return (
+    <div className="app flex flex-col w-[100vw] h-[100vh] bg-[#343541] items-center justify-between">
+      {/* Chat Box */}
+      <div
+        ref={chatRef}
+        className="chat-container max-w-[980px] text-white flex flex-col gap-3 flex-1 w-full h-full overflow-y-scroll overscroll-none scrollbar-hide pb-5 scroll-smooth"
+      >
+        {chatLog.length ? (
+          <>
+            {chatLog?.map((message: any, index: any) => (
+              <ChatMessage key={index} message={message} />
+            ))}
+            <div ref={messagesEndRef} />
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full">
+            <h1 className="text-2xl">ChatGPT</h1>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 m-5">
+              <div className="col-span-1 text-center  space-y-4">
+                <div className=" items-center justify-center flex flex-col">
+                  <SunIcon className="w-5 h-5" />
+                  <h2>Examples</h2>
+                </div>
+                <p className="bg-white/10 rounded-md p-2">
+                  "Explain quantum computing in simple terms"
+                </p>
+                <p className="bg-white/10 rounded-md p-2">
+                  "Got any creative ideas for a 10 year old's birthday?"
+                </p>
+                <p className="bg-white/10 rounded-md p-2">
+                  "How do I make a HTTP request in Javascript?"
+                </p>
+              </div>
+              <div className="col-span-1 text-center  space-y-4">
+                <div className=" items-center justify-center flex flex-col">
+                  <BoltIcon className="w-5 h-5" />
+                  <h2>Capabilities</h2>
+                </div>
+                <p className="bg-white/10 rounded-md p-2">
+                  "Remembers what user said earlier in the conversation"
+                </p>
+                <p className="bg-white/10 rounded-md p-2">
+                  "Allows user to provide follow-up corrections"
+                </p>
+                <p className="bg-white/10 rounded-md p-2">
+                  "Trained to decline inappropriate requests"
+                </p>
+              </div>
+              <div className="col-span-1 text-center  space-y-4">
+                <div className=" items-center justify-center flex flex-col">
+                  <ExclamationTriangleIcon className="w-5 h-5" />
+                  <h2>Limitations</h2>
+                </div>
+                <p className="bg-white/10 rounded-md p-2">
+                  "May occasionally generate incorrect information"
+                </p>
+                <p className="bg-white/10 rounded-md p-2">
+                  "May occasionally produce harmful instructions or biased
+                  content"
+                </p>
+                <p className="bg-white/10 rounded-md p-2">
+                  "Limited knowledge of world and events after 2021"
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      {/* Form */}
+      <form
+        ref={formRef}
+        className="w-full max-w-[980px] my-0 mx-auto p-3 bg-[#40414F] flex gap-3 items-center"
+        onSubmit={handleSubmit}
+      >
+        <input
+          disabled={!session}
+          className={`w-full text-white text-lg p-3 bg-transparent rounded-md border-none outline-none resize-none ${
+            !session &&
+            "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"
+          }`}
+          name="prompt"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={`${
+            !session ? "Sign in to use ChatGPT" : "Ask ChatGPT anything..."
+          }`}
+        ></input>
+        <button
+          type="submit"
+          className="outline-none border-none cursor-pointer bg-transparent mr-5"
+        />
+        <PaperAirplaneIcon className="w-6 h-6 text-gray-400" />
+      </form>
+      <p className="text-gray-400 text-sm my-2">
+        ChatGPT Jan 9 Version. Free Research Preview. Our goal is to make AI
+        systems more natural and safe to interact with. Your feedback will help
+        us improve.
+      </p>
+    </div>
+  );
+}
+
+export default ChatContainer;
+
+```
+
+### Setup Google Cloud Console:
+
+Click on Log in and you get an error: Error 400: redirect_uri_mismatch You can't sign in to this app because it doesn't comply with Google's OAuth 2.0 policy. If you're the app developer, register the redirect URI in the Google Cloud Console. Request details: redirect_uri=http://localhost:3000/api/auth/callback/google
+
+Go to https://console.cloud.google.com/ Create new project:chatgpt-clone > Create > Select Project > Dashboard > APIs and services > OAuth consent screen > User Type > External > Create App name:chatgpt, email:email, app Logo Developer contact information: email Save and Continue X 3 > Back to Dashboard
+
+On the Dashboard click: Credentials > Create Credentials > Create OAuth Client ID > Web application NAme: chatgpt-clone Authorised JavaScript origins:http://localhost:3000 Authorised redirect URIs:http://localhost:3000/api/auth/callback/google Create Copy the Google Client ID and Secret and add it into your .env.local file.
+
+#### Update your .env.local file:
+
+```
+OPENAI_API_KEY=...
+OPENAI_ORG_ID=...
+NEXTAUTH_URL=...
+JWT_SECRET=...
+GOOGLE_ID=...
+GOOGLE_SECRET=...
+```
+
+Test the Login / Logout. It should work as expected.
+
+## Add Env Variable to Vercel through Terminal:
+
+```
+npm install vercel
+vercel login
+vercel link
+Choose your project to be linked to.
+vercel add env
+Enter the name and value of the variable
+```

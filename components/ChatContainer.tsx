@@ -8,6 +8,8 @@ import React, { useContext, useEffect, useRef } from "react";
 import { ChatContext } from "../context/ChatContext";
 import ChatMessage from "./ChatMessage";
 import { v4 } from "uuid";
+import { useSession } from "next-auth/react";
+
 interface Props {}
 
 function ChatContainer({}: Props) {
@@ -20,6 +22,9 @@ function ChatContainer({}: Props) {
     temperature,
     setUniqueId,
   } = useContext(ChatContext);
+
+  const { data: session } = useSession();
+  // console.log(session);
 
   const chatRef = useRef<any>();
   const formRef = useRef<any>();
@@ -172,11 +177,17 @@ function ChatContainer({}: Props) {
         onSubmit={handleSubmit}
       >
         <input
-          className="w-full text-white text-lg p-3 bg-transparent rounded-md border-none outline-none resize-none"
+          disabled={!session}
+          className={`w-full text-white text-lg p-3 bg-transparent rounded-md border-none outline-none resize-none ${
+            !session &&
+            "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"
+          }`}
           name="prompt"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask ChatGPT anything..."
+          placeholder={`${
+            !session ? "Sign in to use ChatGPT" : "Ask ChatGPT anything..."
+          }`}
         ></input>
         <button
           type="submit"

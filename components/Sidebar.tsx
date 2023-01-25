@@ -8,6 +8,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { ChatContext } from "../context/ChatContext";
+import { useSession, signIn, signOut } from "next-auth/react";
 type Props = {};
 
 function Sidebar({}: Props) {
@@ -36,6 +37,8 @@ function Sidebar({}: Props) {
     getEngines();
   }, []);
 
+  const { data: session } = useSession();
+  // console.log(session);
   return (
     <aside className="sidemenu w-80 text-white bg-[#202123] text-left flex flex-col justify-between">
       <div>
@@ -44,7 +47,12 @@ function Sidebar({}: Props) {
           className="sidemenu-btn m-2 border border-gray-700 rounded-lg"
           onClick={clearChat}
         >
-          <button className="flex w-full items-center space-x-3 p-3 hover:bg-white/10 transition-all duration-250 ease-in">
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"}`}
+          >
             <PlusIcon className="w-4 h-4" />{" "}
             <span className="text-sm">New chat</span>
           </button>
@@ -53,9 +61,13 @@ function Sidebar({}: Props) {
         <div className="models m-2 space-y-2">
           <h4 className="p-1 text-md">Model</h4>
           <select
+            disabled={!session}
             onChange={(e) => setCurrentModel(e.target.value)}
             value={currentModel}
-            className=" w-full p-3 m-0 text-sm text-white bg-[#202123] border border-gray-700 rounded-lg transition ease-in-out focus:text-white focus:bg-[#202123] focus:border focus:outline-none"
+            className={`w-full p-3 m-0 text-sm text-white bg-[#202123] border border-gray-700 rounded-lg transition ease-in-out focus:text-white focus:bg-[#202123] focus:border focus:outline-none ${
+              !session &&
+              "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"
+            }`}
           >
             {models &&
               models?.map((model) => (
@@ -65,13 +77,21 @@ function Sidebar({}: Props) {
               ))}
           </select>
           <button
-            className="flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in"
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
             onClick={() => setCurrentModel("text-davinci-003")}
           >
             <span className="text-sm">Smart - Davinci</span>
           </button>
           <button
-            className="flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in"
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
             onClick={() => setCurrentModel("code-cushman-001")}
           >
             <span className="text-sm">Code - Cushman</span>
@@ -92,7 +112,11 @@ function Sidebar({}: Props) {
           <div className="rounded-lg shadow-lg max-w-[300px]">
             <div className="py-2 px-4">
               <input
-                className="w-full accent-indigo-600 cursor-pointer"
+                disabled={!session}
+                className={`w-full accent-indigo-600 cursor-pointer ${
+                  !session &&
+                  "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+                }`}
                 type="range"
                 name="temperature"
                 value={temperature}
@@ -108,19 +132,31 @@ function Sidebar({}: Props) {
             </div>
           </div>
           <button
-            className="flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in"
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
             onClick={() => setTemperature("0")}
           >
             <span className="text-sm">0 - Deterministic & Repetitive</span>
           </button>
           <button
-            className="flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in"
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
             onClick={() => setTemperature("0.5")}
           >
             <span className="text-sm">0.5 - Balanced</span>
           </button>
           <button
-            className="flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in"
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
             onClick={() => setTemperature("1")}
           >
             <span className="text-sm">1 - Creative</span>
@@ -132,17 +168,26 @@ function Sidebar({}: Props) {
         </div>
       </div>
       <div className="sidemenu-btn m-2  border-t py-2">
+        {session && (
+          <button
+            className="flex w-full items-center space-x-3 p-3 rounded-md hover:bg-white/10"
+            onClick={clearChat}
+          >
+            <TrashIcon className="w-4 h-4" />{" "}
+            <span className="text-sm">Clear conversations</span>
+          </button>
+        )}
+
         <button
           className="flex w-full items-center space-x-3 p-3 rounded-md hover:bg-white/10"
-          onClick={clearChat}
+          onClick={!session ? () => signIn() : () => signOut()}
         >
-          <TrashIcon className="w-4 h-4" />{" "}
-          <span className="text-sm">Clear conversations</span>
-        </button>
-
-        <button className="flex w-full items-center space-x-3 p-3 rounded-md hover:bg-white/10">
           <ArrowRightOnRectangleIcon className="w-4 h-4" />{" "}
-          <span className="text-sm">Log out</span>
+          {session ? (
+            <span className="text-sm">Log out</span>
+          ) : (
+            <span className="text-sm">Log In</span>
+          )}
         </button>
       </div>
     </aside>
