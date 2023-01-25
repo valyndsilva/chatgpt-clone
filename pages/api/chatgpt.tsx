@@ -13,22 +13,24 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  const { message } = req.body;
+  const { message, currentModel, temperature } = req.body;
   // console.log("message:", message);
+  // console.log("currentModel:", currentModel);
 
   const response = await openai.createCompletion({
-    model: "text-davinci-003",
-    prompt: `${message}`,
+    // model: "text-davinci-003",
+    model: `${currentModel}`,
     // prompt: `I'm ok.`,
-    temperature: 0.7,
+    prompt: `${message}`,
+    // temperature: 0.7,
+    temperature: Number(`${temperature}`),
     max_tokens: 256,
     top_p: 1,
     frequency_penalty: 0,
     presence_penalty: 0,
   });
-  const suggestion = response.data?.choices?.[0].text;
+  const suggestion: any = response.data?.choices?.[0].text;
   // console.log(suggestion);
-
   if (suggestion === undefined) throw new Error("No suggestion found");
 
   // res.status(200).json({ suggestion: suggestion });

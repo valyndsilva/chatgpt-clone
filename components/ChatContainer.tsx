@@ -4,35 +4,54 @@ import {
   SunIcon,
 } from "@heroicons/react/24/outline";
 import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import { ChatContext } from "../context/ChatContext";
 import ChatMessage from "./ChatMessage";
-
-type Props = {};
+import { v4 } from "uuid";
+interface Props {}
 
 function ChatContainer({}: Props) {
-  // const [input, setInput] = useState<any>("");
-  // const [chatLog, setChatLog] = useState<any>([
-  //   {
-  //     user: "gpt",
-  //     message: "How can I help you today?",
-  //   },
-  //   {
-  //     user: "me",
-  //     message: "I want to use chatGPT today.",
-  //   },
-  // ]);
+  const {
+    input,
+    setInput,
+    chatLog,
+    setChatLog,
+    currentModel,
+    temperature,
+    setUniqueId,
+  } = useContext(ChatContext);
 
-  const { input, setInput, chatLog, setChatLog } = useContext(ChatContext);
+  const chatRef = useRef<any>();
+  const formRef = useRef<any>();
+  const messagesEndRef = useRef<any>();
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatLog]);
+
+  // handleSubmit functionality
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    console.log("submit");
-    const newChatLog = [...chatLog, { user: "me", message: `${input}` }];
+    // console.log("handleSubmit triggered!");
+
+    const uuId = v4();
+    // console.log(uuId);
+
+    const uniqueUserId = "USER_" + uuId;
+    // console.log({ uniqueUserId });
+
+    const newChatLog = [
+      ...chatLog,
+      { user: "me", messageId: `${uniqueUserId}`, message: `${input}` },
+    ];
+    // console.log({ newChatLog });
     setInput("");
     setChatLog(newChatLog);
     // console.log({ chatLog });
-    // console.log({ newChatLog });
     const messages = newChatLog
       .map((message: { message: any }) => message.message)
       .join("\n");
@@ -45,27 +64,46 @@ function ChatContainer({}: Props) {
       },
       body: JSON.stringify({
         message: messages,
+        currentModel,
+        temperature,
       }),
     });
     const data = await response.json();
     // console.log(data.suggestion);
-    setChatLog([...newChatLog, { user: "gpt", message: `${data.suggestion}` }]);
+    const botMessage = data.suggestion.trim(); // trims any trailing spaces/'\n'
+
+    const uniqueAiId = "AI_" + uuId;
+    // console.log({ uniqueAiId });
+    setUniqueId(uniqueAiId);
+
+    setChatLog([
+      ...newChatLog,
+      {
+        user: "gpt",
+        messageId: `${uniqueAiId}`,
+        message: `${botMessage}`,
+      },
+    ]); // trims any trailing spaces/'\n'
   };
 
   return (
     <div className="app flex flex-col w-[100vw] h-[100vh] bg-[#343541] items-center justify-between">
       {/* Chat Box */}
-      <div className="chat-container text-white flex flex-col gap-3 flex-1 w-full h-full overflow-y-scroll overscroll-none scrollbar-hide pb-5 scroll-smooth">
-        {chatLog ? (
+      <div
+        ref={chatRef}
+        className="chat-container max-w-[980px] text-white flex flex-col gap-3 flex-1 w-full h-full overflow-y-scroll overscroll-none scrollbar-hide pb-5 scroll-smooth"
+      >
+        {chatLog.length ? (
           <>
             {chatLog?.map((message: any, index: any) => (
               <ChatMessage key={index} message={message} />
             ))}
+            <div ref={messagesEndRef} />
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full">
             <h1 className="text-2xl">ChatGPT</h1>
-            <div className="grid grid-cols-3 gap-6 m-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 m-5">
               <div className="col-span-1 text-center  space-y-4">
                 <div className=" items-center justify-center flex flex-col">
                   <SunIcon className="w-5 h-5" />
@@ -118,7 +156,8 @@ function ChatContainer({}: Props) {
       </div>
       {/* Form */}
       <form
-        className="w-full max-w-[1280] my-0 mx-auto p-3 bg-[#40414F] flex gap-3 items-center"
+        ref={formRef}
+        className="w-full max-w-[980px] my-0 mx-auto p-3 bg-[#40414F] flex gap-3 items-center"
         onSubmit={handleSubmit}
       >
         <input
@@ -134,6 +173,11 @@ function ChatContainer({}: Props) {
         />
         <PaperAirplaneIcon className="w-6 h-6 text-gray-400" />
       </form>
+      <p className="text-gray-400 text-sm my-2">
+        ChatGPT Jan 9 Version. Free Research Preview. Our goal is to make AI
+        systems more natural and safe to interact with. Your feedback will help
+        us improve.
+      </p>
     </div>
   );
 }

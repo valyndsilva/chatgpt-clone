@@ -1,10 +1,17 @@
-import React from "react";
+import React, { useContext } from "react";
+import { ChatContext } from "../context/ChatContext";
 
 type Props = {
   message: any;
 };
 
 function ChatMessage({ message }: Props) {
+  // const { uniqueId } = useContext(ChatContext);
+  // console.log({ uniqueId });
+
+  // console.log("messageID:", message.messageId);
+  // const messageId = message.messageId;
+
   return (
     <div
       className={`wrapper chat-log w-full  ${
@@ -29,7 +36,10 @@ function ChatMessage({ message }: Props) {
             alt={`${message.user === "gpt" ? "bot" : "user"}`}
           />
         </div>
-        <div className="message flex-1 text-[#dcdcdc] text-xl max-w-[100%] whitespace-pre-wrap">
+        <div
+          className="message flex-1 text-[#dcdcdc] text-xl max-w-[100%]  whitespace-pre-wrap"
+          id={`${message.messageId}`}
+        >
           {message.message}
         </div>
       </div>
