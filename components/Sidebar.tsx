@@ -23,6 +23,7 @@ function Sidebar({}: Props) {
 
   const clearChat = () => {
     setChatLog([]);
+    localStorage.clear();
   };
   const getEngines = async () => {
     const response = await fetch("/api/models");
@@ -138,7 +139,7 @@ function Sidebar({}: Props) {
           <TrashIcon className="w-4 h-4" />{" "}
           <span className="text-sm">Clear conversations</span>
         </button>
-        
+
         <button className="flex w-full items-center space-x-3 p-3 rounded-md hover:bg-white/10">
           <ArrowRightOnRectangleIcon className="w-4 h-4" />{" "}
           <span className="text-sm">Log out</span>

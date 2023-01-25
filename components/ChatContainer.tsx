@@ -86,6 +86,17 @@ function ChatContainer({}: Props) {
     ]); // trims any trailing spaces/'\n'
   };
 
+  // Getting chatLog stored value from localStorage and loading it into React state
+  useEffect(() => {
+    const data: any = window.localStorage.getItem("chatLogs");
+    if (data) setChatLog(JSON.parse(data));
+  }, []);
+  // Storing chatLog state in localStorage
+  useEffect(() => {
+    if (chatLog.length > 0)
+      window.localStorage.setItem("chatLogs", JSON.stringify(chatLog));
+  }, [chatLog]);
+
   return (
     <div className="app flex flex-col w-[100vw] h-[100vh] bg-[#343541] items-center justify-between">
       {/* Chat Box */}

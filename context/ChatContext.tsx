@@ -46,6 +46,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   //   },
   // ]);
   const [chatLog, setChatLog] = useState([]);
+ 
 
   return (
     <ChatContext.Provider
