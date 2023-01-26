@@ -3132,7 +3132,9 @@ export default ChatContainer;
 ```
 
 ## To avoid flickering use SSR for session:
+
 When you refresh the page you might see a flicker between the Welcome.tsx and Intro.tsx components. This can be avoiided by using SSR for loading the session.
+
 ### Update pages/index.tsx:
 
 ```
@@ -3589,13 +3591,148 @@ vercel add env
 Enter the name and value of the variable
 ```
 
-## Testing:
+## Testing Scenarios:
 
 By default Model:"text-davinci-002" and Temperature:"0.7".
 You can select a model of your choice and set the temperature.
 
 Test example: Hi. Can you create a sitemap for a coffee shop website and also create some copy for each page?
 
+### Shopping List:
+
 Test example: I want to cook something with seafood today, can you give me 10 dishes as options?
 Can I have a shopping list for the first two options?
 What are the cooking steps to make seafood chowder?
+
+### Javascript:
+
+Test example: How do I make an HTTP request in Javascript?
+
+### Tell Short Story:
+
+Test example: Create a short story about a rabbit and cheetah.
+Write the story again, but with the moral of the story being about friendship and patience
+
+If an answer is too long ChatGPT stops in between. Just type "continue..." and it should carry on with th answer.
+
+### Text Video Game:
+
+Test example: You are a text video game where you give me options (A,B,C, D) as my choices. The scene is from the Matrix, I start with 100 health.
+
+### Generate Legal and Copyright Templates:
+
+Test example: create a copyright and privacy policy for a website about accounting I can use as a page
+
+As someone who lives in UK, update these to be relevant for the regulations in this area
+
+### Jokes and Humour:
+
+Test examples:
+Write a nerdy pun.
+Give me another!
+Write me a geeky joke.
+Tell me a joke about a hat that would never stay on a rabbits head.
+Pretend you are elon musk and you have bought twitter. What sort of joke would you say as elon musk?
+
+### Cover Letter and Resumes:
+
+Test examples:
+Write a professional cover letter for a fron-end developer position at a company called Client Server for me, Valyn Silva, as someone who knows all the basics required for the job
+Based on this cover letter, write a resume which includes list of skills, language etc for this position.
+
+### Summarization an dKeyword Extraction:
+
+The following is from the Privacy Act 1988, simplify it for me in a couple of sentences:
+The Privacy Regulation 2013 relates to various provisions of the Privacy Act including:
+the definition of various terms relevant to the credit reporting provisions in Part III A of the Privacy Act
+permitted disclosures of credit information to a credit reporting body (see s 21D of the Privacy Act)
+
+Pull out the 2 most important keywords fromm the above statement
+Explain this Privacy Act like I'm a 6 year old.
+Explain it in 20 words or less
+
+### Blogging Articles and Editing:
+
+Provide 10 blog topics for articles about web developement
+Give me 5 variations on this topic title: 10 Top Tips for Creating an Engaging Website
+Provide the outline of a blog article title: 10 Steps to Building a Captivating Website
+Start the introduction for this article that is atleast 3 sentences long.
+
+Rephrase the following sentence: []
+Shorten / Lengthen the following sentence: ....
+Fix the grammer in the following sentence:...
+Translate the sentence into Portuguese.
+Translate it back to English.
+Create the subject line of the email newsletter based on the above.
+
+### Summarize Text
+
+Summarize this text: [text here]
+
+### Generate Title:
+
+Generate a title for the following: best headphone brands
+
+### Respond to Text:
+
+Respond to this message: [message here]
+
+### Add Emotion:
+
+Please make this sound [emotion]:[text here]
+
+### Turn Text into Blog Post:
+Write this in blog post form: [blog title or text here]
+Write a three paragraph blog post on: [blog title or text here]
+
+### Summarize Text to Bullet points:
+Summarize this text in bullet point form: [text here]
+
+### Compare and Contrast Text or Pros and Cons List:
+Compare and contrast the following: [text here]
+
+### Translate Text:
+Write the following in [language]: [your text]
+
+### Celebrity or Personality Styles:
+Write the following the the style of [Celebrity name]: [text here]
+
+### Create Analogies:
+Create an analogy for [specific word or text]
+
+### Create a List:
+Please create a list of:[topic here]
+
+### Generate Dialogue:
+Write a [length] line dialogue between [subject1] and [subject2]
+
+### Complex Concepts:
+Explain the following concepts at a 5th grade level: [complex topic]
+
+### Generate Recipe:
+Provide a recipe for the following: [recipe name]
+Provide a recipe for the following: [ingredient], [ingredient] and [ingredient]
+I have [ingredients name]. What can I make with these?
+
+### Solving Problems:
+Solve the following problem: [problem]
+Solve the following problem and provide an explaination: [problem]
+
+### Problem Creation:
+Generate a scenario of a problem faeturing: [subject matter]
+
+### Create Code or Code Snippets:
+Create [what you want the code to be used for] in [language]
+
+### Create Jokes:
+ Write a joke based on: [joke topic]
+
+ ### Create Poems:
+ Write an original poem about: [subject matter]
+
+ ### Create Music:
+ Write a [intrument] chord progression in the style [musician name]
+ Write lyrics for the following beat: [music]
+
+ ### Create Social Media Posts:
+ Please provide me [number] tweet ideas that pertain to:[topic]
