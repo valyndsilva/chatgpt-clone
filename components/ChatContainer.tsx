@@ -1,18 +1,18 @@
-import {
-  BoltIcon,
-  ExclamationTriangleIcon,
-  SunIcon,
-} from "@heroicons/react/24/outline";
 import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
 import React, { useContext, useEffect, useRef } from "react";
 import { ChatContext } from "../context/ChatContext";
 import ChatMessage from "./ChatMessage";
 import { v4 } from "uuid";
-import { useSession } from "next-auth/react";
+// import { useSession } from "next-auth/react";
+import Welcome from "./Welcome";
+import Intro from "./Intro";
+import { Session } from "next-auth";
 
-interface Props {}
+interface Props {
+  session: Session;
+}
 
-function ChatContainer({}: Props) {
+function ChatContainer({ session }: Props) {
   const {
     input,
     setInput,
@@ -23,7 +23,7 @@ function ChatContainer({}: Props) {
     setUniqueId,
   } = useContext(ChatContext);
 
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
   // console.log(session);
 
   const chatRef = useRef<any>();
@@ -107,73 +107,26 @@ function ChatContainer({}: Props) {
       {/* Chat Box */}
       <div
         ref={chatRef}
-        className="chat-container max-w-[980px] text-white flex flex-col gap-3 flex-1 w-full h-full overflow-y-scroll overscroll-none scrollbar-hide pb-5 scroll-smooth"
+        className="chat-container max-w-[980px] mt-5 text-white flex flex-col gap-3 flex-1 w-full h-full overflow-y-scroll overscroll-none scrollbar-hide pb-5 scroll-smooth"
       >
-        {chatLog.length ? (
+        {session && chatLog.length ? (
           <>
             {chatLog?.map((message: any, index: any) => (
               <ChatMessage key={index} message={message} />
             ))}
             <div ref={messagesEndRef} />
           </>
+        ) : session ? (
+          <Intro />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full">
-            <h1 className="text-2xl">ChatGPT</h1>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 m-5">
-              <div className="col-span-1 text-center  space-y-4">
-                <div className=" items-center justify-center flex flex-col">
-                  <SunIcon className="w-5 h-5" />
-                  <h2>Examples</h2>
-                </div>
-                <p className="bg-white/10 rounded-md p-2">
-                  "Explain quantum computing in simple terms"
-                </p>
-                <p className="bg-white/10 rounded-md p-2">
-                  "Got any creative ideas for a 10 year old's birthday?"
-                </p>
-                <p className="bg-white/10 rounded-md p-2">
-                  "How do I make a HTTP request in Javascript?"
-                </p>
-              </div>
-              <div className="col-span-1 text-center  space-y-4">
-                <div className=" items-center justify-center flex flex-col">
-                  <BoltIcon className="w-5 h-5" />
-                  <h2>Capabilities</h2>
-                </div>
-                <p className="bg-white/10 rounded-md p-2">
-                  "Remembers what user said earlier in the conversation"
-                </p>
-                <p className="bg-white/10 rounded-md p-2">
-                  "Allows user to provide follow-up corrections"
-                </p>
-                <p className="bg-white/10 rounded-md p-2">
-                  "Trained to decline inappropriate requests"
-                </p>
-              </div>
-              <div className="col-span-1 text-center  space-y-4">
-                <div className=" items-center justify-center flex flex-col">
-                  <ExclamationTriangleIcon className="w-5 h-5" />
-                  <h2>Limitations</h2>
-                </div>
-                <p className="bg-white/10 rounded-md p-2">
-                  "May occasionally generate incorrect information"
-                </p>
-                <p className="bg-white/10 rounded-md p-2">
-                  "May occasionally produce harmful instructions or biased
-                  content"
-                </p>
-                <p className="bg-white/10 rounded-md p-2">
-                  "Limited knowledge of world and events after 2021"
-                </p>
-              </div>
-            </div>
-          </div>
+          <Welcome />
         )}
       </div>
       {/* Form */}
+
       <form
         ref={formRef}
-        className="w-full max-w-[980px] my-0 mx-auto p-3 bg-[#40414F] flex gap-3 items-center"
+        className="w-full max-w-[980px] my-0 mx-auto p-3 bg-[#40414F] flex items-center"
         onSubmit={handleSubmit}
       >
         <input
@@ -190,12 +143,14 @@ function ChatContainer({}: Props) {
           }`}
         ></input>
         <button
+          onClick={handleSubmit}
           type="submit"
-          className="outline-none border-none cursor-pointer bg-transparent mr-5"
-        />
-        <PaperAirplaneIcon className="w-6 h-6 text-gray-400" />
+          className=" outline-none border-none cursor-pointer bg-transparent mr-5"
+        >
+          <PaperAirplaneIcon className="w-6 h-6 text-gray-400" />
+        </button>
       </form>
-      <p className="text-gray-400 text-sm my-2">
+      <p className="hidden md:inline-flex text-gray-400 text-sm my-2">
         ChatGPT Jan 9 Version. Free Research Preview. Our goal is to make AI
         systems more natural and safe to interact with. Your feedback will help
         us improve.

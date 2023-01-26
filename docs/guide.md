@@ -221,7 +221,7 @@ function ChatMessage({ message }: Props) {
       }  `}
     >
       <div
-        className={`chat-message p-3 w-full max-w-[1280px] my-0 mx-auto flex items-center justify-center gap-3`}
+        className={`chat-message p-3 w-full max-w-[1280px] my-0 mx-auto flex justify-center gap-3`}
       >
         <div
           className={`profile avatar w-9 h-9 rounded-md bg-[#5436DA] flex justify-center items-center ${
@@ -1799,20 +1799,42 @@ export default ChatContainer;
 
 ### Update components/ChatMessage.tsx:
 
+Update the bot message to print with typing text animation.
+
 ```
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { ChatContext } from "../context/ChatContext";
+import BouncingDotsLoader from "./BouncingDotsLoader";
 
 type Props = {
   message: any;
 };
 
 function ChatMessage({ message }: Props) {
-  // const { uniqueId } = useContext(ChatContext);
-  // console.log({ uniqueId });
+  const { uniqueId } = useContext(ChatContext);
+  console.log({ uniqueId });
 
-  // console.log("messageID:", message.messageId);
-  // const messageId = message.messageId;
+  const AnimText = (content: string, delay: number) => {
+    const [displayed, updateDisplay] = useState("");
+    let animID: any;
+    const typeLetter = () => {
+      updateDisplay((prevText) => {
+        if (content.length <= prevText.length) clearInterval(animID);
+        return prevText.concat(content.charAt(prevText.length));
+      });
+    };
+
+    useEffect(() => {
+      updateDisplay(content.charAt(0)); // call once to avoid empty element flash
+      animID = setInterval(typeLetter, delay);
+      return () => {
+        updateDisplay("");
+        clearInterval(animID);
+      };
+    }, [content]); // this make sure it re-renders every time the content changes (return function resets display)
+
+    return displayed; //
+  };
 
   return (
     <div
@@ -1821,7 +1843,7 @@ function ChatMessage({ message }: Props) {
       }  `}
     >
       <div
-        className={`chat-message p-3 w-full max-w-[1280px] my-0 mx-auto flex items-center justify-center gap-3`}
+        className={`chat-message p-3 w-full max-w-[1280px] my-0 mx-auto flex justify-center gap-3`}
       >
         <div
           className={`profile avatar w-9 h-9 rounded-md bg-[#5436DA] flex justify-center items-center ${
@@ -1842,7 +1864,13 @@ function ChatMessage({ message }: Props) {
           className="message flex-1 text-[#dcdcdc] text-xl max-w-[100%]  whitespace-pre-wrap"
           id={`${message.messageId}`}
         >
-          {message.message}
+          {/* {message.message} */}
+          {/* {message.messageId === uniqueId ? "Bot Message" : "User Message"} */}
+          {`${
+            message.messageId === uniqueId
+              ? AnimText(message.message, 20)
+              : message.message
+          }`}
         </div>
       </div>
     </div>
@@ -1851,9 +1879,10 @@ function ChatMessage({ message }: Props) {
 
 export default ChatMessage;
 
+
 ```
 
-## Persist chat using loacl storage:
+## Persist chat using local storage:
 
 ### Update components/ChatContainer.tsx:
 
@@ -2214,13 +2243,6 @@ function Sidebar({}: Props) {
 export default Sidebar;
 ```
 
-## Testing:
-
-By default Model:"text-davinci-002" and Temperature:"0.7".
-You can select a model of your choice and set the temperature.
-
-Test example: Hi. Can you create a sitemap for a coffee shop website and also create some copy for each page?
-
 ## Implementing Authentication using Next-Auth:
 
 ### Install Next-Auth
@@ -2547,7 +2569,7 @@ export default Sidebar;
 
 ```
 
-### Update components/ChatContainer.tsx:
+### Update components/Chatcontainer.tsx:
 
 ```
 import {
@@ -2560,7 +2582,8 @@ import React, { useContext, useEffect, useRef } from "react";
 import { ChatContext } from "../context/ChatContext";
 import ChatMessage from "./ChatMessage";
 import { v4 } from "uuid";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
+import Image from "next/image";
 
 interface Props {}
 
@@ -2576,7 +2599,7 @@ function ChatContainer({}: Props) {
   } = useContext(ChatContext);
 
   const { data: session } = useSession();
-  console.log(session);
+  // console.log(session);
 
   const chatRef = useRef<any>();
   const formRef = useRef<any>();
@@ -2661,14 +2684,14 @@ function ChatContainer({}: Props) {
         ref={chatRef}
         className="chat-container max-w-[980px] text-white flex flex-col gap-3 flex-1 w-full h-full overflow-y-scroll overscroll-none scrollbar-hide pb-5 scroll-smooth"
       >
-        {chatLog.length ? (
+        {session && chatLog.length ? (
           <>
             {chatLog?.map((message: any, index: any) => (
               <ChatMessage key={index} message={message} />
             ))}
             <div ref={messagesEndRef} />
           </>
-        ) : (
+        ) : session ? (
           <div className="flex flex-col items-center justify-center h-full">
             <h1 className="text-2xl">ChatGPT</h1>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 m-5">
@@ -2677,13 +2700,30 @@ function ChatContainer({}: Props) {
                   <SunIcon className="w-5 h-5" />
                   <h2>Examples</h2>
                 </div>
-                <p className="bg-white/10 rounded-md p-2">
+                <p
+                  className="bg-white/10 rounded-md p-2"
+                  onClick={() =>
+                    setInput("Explain quantum computing in simple terms")
+                  }
+                >
                   "Explain quantum computing in simple terms"
                 </p>
-                <p className="bg-white/10 rounded-md p-2">
+                <p
+                  className="bg-white/10 rounded-md p-2"
+                  onClick={() =>
+                    setInput(
+                      "Got any creative ideas for a 10 year old's birthday?"
+                    )
+                  }
+                >
                   "Got any creative ideas for a 10 year old's birthday?"
                 </p>
-                <p className="bg-white/10 rounded-md p-2">
+                <p
+                  className="bg-white/10 rounded-md p-2"
+                  onClick={() =>
+                    setInput("How do I make a HTTP request in Javascript?")
+                  }
+                >
                   "How do I make a HTTP request in Javascript?"
                 </p>
               </div>
@@ -2720,12 +2760,40 @@ function ChatContainer({}: Props) {
               </div>
             </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 space-y-2 md:space-y-6 items-center justify-center w-full h-full">
+            <div className="col-span-1 md:col-span-1 w-full p-5 space-y-8 flex flex-col items-center justify-center">
+              <h2 className="text-lg md:text-3xl font-semibold">
+                Welcome to ChatGPT!
+              </h2>
+              <p className="max-w-[350px] text-md font-medium leading-7 tracking-wider text-center">
+                ChatGPT: Optimizing Language Models for Dialogue interacts in a
+                conversational way. The dialogue format makes it possible for
+                ChatGPT to answer followup questions, admit its mistakes,
+                challenge incorrect premises, and reject inappropriate requests.
+              </p>
+              <button
+                onClick={() => signIn()}
+                className={`flex items-center p-4 rounded-lg bg-[#842984] hover:bg-white/10 transition-all duration-250 ease-in`}
+              >
+                Try ChatGPT
+              </button>
+            </div>
+            <div className="hidden md:col-span-1 w-full md:inline-flex flex-col items-center justify-center">
+              <Image
+                src="/chatgpt.jpg"
+                width={300}
+                height={300}
+                alt="chatgpt image"
+              />
+            </div>
+          </div>
         )}
       </div>
       {/* Form */}
       <form
         ref={formRef}
-        className="w-full max-w-[980px] my-0 mx-auto p-3 bg-[#40414F] flex gap-3 items-center"
+        className="w-full max-w-[980px] my-0 mx-auto p-3 bg-[#40414F] flex items-center"
         onSubmit={handleSubmit}
       >
         <input
@@ -2742,12 +2810,14 @@ function ChatContainer({}: Props) {
           }`}
         ></input>
         <button
+          onClick={handleSubmit}
           type="submit"
-          className="outline-none border-none cursor-pointer bg-transparent mr-5"
-        />
+          className=" outline-none border-none cursor-pointer bg-transparent mr-5"
+        >
         <PaperAirplaneIcon className="w-6 h-6 text-gray-400" />
+        </button>
       </form>
-      <p className="text-gray-400 text-sm my-2">
+      <p className="hidden md:inline-flex text-gray-400 text-sm my-2">
         ChatGPT Jan 9 Version. Free Research Preview. Our goal is to make AI
         systems more natural and safe to interact with. Your feedback will help
         us improve.
@@ -2757,6 +2827,733 @@ function ChatContainer({}: Props) {
 }
 
 export default ChatContainer;
+
+
+```
+
+## Cleanup components/ChatContainer:
+
+### Create components/Welcome.tsx:
+
+```
+import Image from "next/image";
+import React from "react";
+import { signIn } from "next-auth/react";
+type Props = {};
+
+function Welcome({}: Props) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 space-y-2 md:space-y-6 items-center justify-center w-full h-full">
+      <div className="col-span-1 md:col-span-1 w-full p-5 space-y-8 flex flex-col items-center justify-center">
+        <h2 className="text-lg md:text-3xl font-semibold">
+          Welcome to ChatGPT!
+        </h2>
+        <p className="max-w-[350px] text-md font-medium leading-7 tracking-wider text-center">
+          ChatGPT: Optimizing Language Models for Dialogue interacts in a
+          conversational way. The dialogue format makes it possible for ChatGPT
+          to answer followup questions, admit its mistakes, challenge incorrect
+          premises, and reject inappropriate requests.
+        </p>
+        <button
+          onClick={() => signIn()}
+          className={`flex items-center p-4 rounded-lg bg-[#842984] hover:bg-white/10 transition-all duration-250 ease-in`}
+        >
+          Try ChatGPT
+        </button>
+      </div>
+      <div className="hidden md:col-span-1 w-full md:inline-flex flex-col items-center justify-center">
+        <Image
+          src="/chatgpt.jpg"
+          width={300}
+          height={300}
+          alt="chatgpt image"
+        />
+      </div>
+    </div>
+  );
+}
+
+export default Welcome;
+
+```
+
+### Create components/Intro.tsx:
+
+```
+import React, { useContext } from "react";
+import {
+  BoltIcon,
+  ExclamationTriangleIcon,
+  SunIcon,
+} from "@heroicons/react/24/outline";
+import { ChatContext } from "../context/ChatContext";
+type Props = {};
+
+function Intro({}: Props) {
+  const { setInput } = useContext(ChatContext);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full">
+      <h1 className="text-2xl">ChatGPT</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 m-5">
+        <div className="col-span-1 text-center  space-y-4">
+          <div className=" items-center justify-center flex flex-col">
+            <SunIcon className="w-5 h-5" />
+            <h2>Examples</h2>
+          </div>
+          <p
+            className="bg-white/10 rounded-md p-2 cursor-pointer hover:bg-gray-700"
+            onClick={() =>
+              setInput("Explain quantum computing in simple terms")
+            }
+          >
+            "Explain quantum computing in simple terms"
+          </p>
+          <p
+            className="bg-white/10 rounded-md p-2 cursor-pointer hover:bg-gray-700"
+            onClick={() =>
+              setInput("Got any creative ideas for a 10 year old's birthday?")
+            }
+          >
+            "Got any creative ideas for a 10 year old's birthday?"
+          </p>
+          <p
+            className="bg-white/10 rounded-md p-2 cursor-pointer hover:bg-gray-700"
+            onClick={() =>
+              setInput("How do I make a HTTP request in Javascript?")
+            }
+          >
+            "How do I make a HTTP request in Javascript?"
+          </p>
+        </div>
+        <div className="col-span-1 text-center  space-y-4">
+          <div className=" items-center justify-center flex flex-col">
+            <BoltIcon className="w-5 h-5" />
+            <h2>Capabilities</h2>
+          </div>
+          <p className="bg-white/10 rounded-md p-2">
+            "Remembers what user said earlier in the conversation"
+          </p>
+          <p className="bg-white/10 rounded-md p-2">
+            "Allows user to provide follow-up corrections"
+          </p>
+          <p className="bg-white/10 rounded-md p-2">
+            "Trained to decline inappropriate requests"
+          </p>
+        </div>
+        <div className="col-span-1 text-center  space-y-4">
+          <div className=" items-center justify-center flex flex-col">
+            <ExclamationTriangleIcon className="w-5 h-5" />
+            <h2>Limitations</h2>
+          </div>
+          <p className="bg-white/10 rounded-md p-2">
+            "May occasionally generate incorrect information"
+          </p>
+          <p className="bg-white/10 rounded-md p-2">
+            "May occasionally produce harmful instructions or biased content"
+          </p>
+          <p className="bg-white/10 rounded-md p-2">
+            "Limited knowledge of world and events after 2021"
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Intro;
+
+```
+
+### ### Update components/Chatcontainer.tsx:
+
+```
+import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { ChatContext } from "../context/ChatContext";
+import ChatMessage from "./ChatMessage";
+import { v4 } from "uuid";
+import { useSession } from "next-auth/react";
+import Welcome from "./Welcome";
+import Intro from "./Intro";
+
+interface Props {}
+
+function ChatContainer({}: Props) {
+  const {
+    input,
+    setInput,
+    chatLog,
+    setChatLog,
+    currentModel,
+    temperature,
+    setUniqueId,
+  } = useContext(ChatContext);
+
+  const { data: session } = useSession();
+  // console.log(session);
+
+  const chatRef = useRef<any>();
+  const formRef = useRef<any>();
+  const messagesEndRef = useRef<any>();
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatLog]);
+
+  // handleSubmit functionality
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    // console.log("handleSubmit triggered!");
+
+    const uuId = v4();
+    // console.log(uuId);
+
+    const uniqueUserId = "USER_" + uuId;
+    // console.log({ uniqueUserId });
+
+    const newChatLog = [
+      ...chatLog,
+      { user: "me", messageId: `${uniqueUserId}`, message: `${input}` },
+    ];
+    // console.log({ newChatLog });
+    setInput("");
+    setChatLog(newChatLog);
+    // console.log({ chatLog });
+    const messages = newChatLog
+      .map((message: { message: any }) => message.message)
+      .join("\n");
+
+    //fetch response to the api combining the chat log array of messages and sending it as a message to localhost:3000 as a post
+    const response = await fetch("/api/chatgpt", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: messages,
+        currentModel,
+        temperature,
+      }),
+    });
+    const data = await response.json();
+    // console.log(data.suggestion);
+    const botMessage = data.suggestion.trim(); // trims any trailing spaces/'\n'
+
+    const uniqueAiId = "AI_" + uuId;
+    // console.log({ uniqueAiId });
+    setUniqueId(uniqueAiId);
+
+    setChatLog([
+      ...newChatLog,
+      {
+        user: "gpt",
+        messageId: `${uniqueAiId}`,
+        message: `${botMessage}`,
+      },
+    ]); // trims any trailing spaces/'\n'
+  };
+
+  // Getting chatLog stored value from localStorage and loading it into React state
+  useEffect(() => {
+    const data: any = window.localStorage.getItem("chatLogs");
+    if (data) setChatLog(JSON.parse(data));
+  }, []);
+  // Storing chatLog state in localStorage
+  useEffect(() => {
+    if (chatLog.length > 0)
+      window.localStorage.setItem("chatLogs", JSON.stringify(chatLog));
+  }, [chatLog]);
+
+  return (
+    <div className="app flex flex-col w-[100vw] h-[100vh] bg-[#343541] items-center justify-between">
+      {/* Chat Box */}
+      <div
+        ref={chatRef}
+        className="chat-container max-w-[980px] mt-5 text-white flex flex-col gap-3 flex-1 w-full h-full overflow-y-scroll overscroll-none scrollbar-hide pb-5 scroll-smooth"
+      >
+        {session && chatLog.length ? (
+          <>
+            {chatLog?.map((message: any, index: any) => (
+              <ChatMessage key={index} message={message} />
+            ))}
+            <div ref={messagesEndRef} />
+          </>
+        ) : session ? (
+          <Intro />
+        ) : (
+          <Welcome />
+        )}
+      </div>
+      {/* Form */}
+
+      <form
+        ref={formRef}
+        className="w-full max-w-[980px] my-0 mx-auto p-3 bg-[#40414F] flex items-center"
+        onSubmit={handleSubmit}
+      >
+        <input
+          disabled={!session}
+          className={`w-full text-white text-lg p-3 bg-transparent rounded-md border-none outline-none resize-none ${
+            !session &&
+            "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"
+          }`}
+          name="prompt"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={`${
+            !session ? "Sign in to use ChatGPT" : "Ask ChatGPT anything..."
+          }`}
+        ></input>
+        <button
+          onClick={handleSubmit}
+          type="submit"
+          className=" outline-none border-none cursor-pointer bg-transparent mr-5"
+        >
+          <PaperAirplaneIcon className="w-6 h-6 text-gray-400" />
+        </button>
+      </form>
+      <p className="hidden md:inline-flex text-gray-400 text-sm my-2">
+        ChatGPT Jan 9 Version. Free Research Preview. Our goal is to make AI
+        systems more natural and safe to interact with. Your feedback will help
+        us improve.
+      </p>
+    </div>
+  );
+}
+
+export default ChatContainer;
+
+
+```
+
+## To avoid flickering use SSR for session:
+When you refresh the page you might see a flicker between the Welcome.tsx and Intro.tsx components. This can be avoiided by using SSR for loading the session.
+### Update pages/index.tsx:
+
+```
+import Head from "next/head";
+import { useEffect, useState } from "react";
+import { ChatContainer, Sidebar } from "../components";
+import { getSession } from "next-auth/react";
+import { Session } from "next-auth";
+import { GetServerSideProps } from "next";
+interface Props {
+  session: Session;
+}
+const Home = ({ session }: Props) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  {
+    !mounted && null;
+  }
+  return (
+    <div>
+      <Head>
+        <title>ChatGPT Clone</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+
+      <main className="flex box-border">
+         <Sidebar session={session} />
+        {/* <ChatContainer uniqueUserId={uniqueUserId} uniqueAiId={uniqueAiId} /> */}
+        {/* <ChatContainer uniqueId={uniqueId} /> */}
+        <ChatContainer session={session} />
+      </main>
+    </div>
+  );
+};
+
+export default Home;
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const session = await getSession(context);
+
+  return {
+    props: {
+      session,
+    },
+  };
+};
+
+```
+
+### Update pages/components/ChatContainer.tsx:
+
+```
+import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
+import React, { useContext, useEffect, useRef } from "react";
+import { ChatContext } from "../context/ChatContext";
+import ChatMessage from "./ChatMessage";
+import { v4 } from "uuid";
+// import { useSession } from "next-auth/react";
+import Welcome from "./Welcome";
+import Intro from "./Intro";
+import { Session } from "next-auth";
+
+interface Props {
+  session: Session;
+}
+
+function ChatContainer({ session }: Props) {
+  const {
+    input,
+    setInput,
+    chatLog,
+    setChatLog,
+    currentModel,
+    temperature,
+    setUniqueId,
+  } = useContext(ChatContext);
+
+  // const { data: session } = useSession();
+  // console.log(session);
+
+  const chatRef = useRef<any>();
+  const formRef = useRef<any>();
+  const messagesEndRef = useRef<any>();
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatLog]);
+
+  // handleSubmit functionality
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    // console.log("handleSubmit triggered!");
+
+    const uuId = v4();
+    // console.log(uuId);
+
+    const uniqueUserId = "USER_" + uuId;
+    // console.log({ uniqueUserId });
+
+    const newChatLog = [
+      ...chatLog,
+      { user: "me", messageId: `${uniqueUserId}`, message: `${input}` },
+    ];
+    // console.log({ newChatLog });
+    setInput("");
+    setChatLog(newChatLog);
+    // console.log({ chatLog });
+    const messages = newChatLog
+      .map((message: { message: any }) => message.message)
+      .join("\n");
+
+    //fetch response to the api combining the chat log array of messages and sending it as a message to localhost:3000 as a post
+    const response = await fetch("/api/chatgpt", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: messages,
+        currentModel,
+        temperature,
+      }),
+    });
+    const data = await response.json();
+    // console.log(data.suggestion);
+    const botMessage = data.suggestion.trim(); // trims any trailing spaces/'\n'
+
+    const uniqueAiId = "AI_" + uuId;
+    // console.log({ uniqueAiId });
+    setUniqueId(uniqueAiId);
+
+    setChatLog([
+      ...newChatLog,
+      {
+        user: "gpt",
+        messageId: `${uniqueAiId}`,
+        message: `${botMessage}`,
+      },
+    ]); // trims any trailing spaces/'\n'
+  };
+
+  // Getting chatLog stored value from localStorage and loading it into React state
+  useEffect(() => {
+    const data: any = window.localStorage.getItem("chatLogs");
+    if (data) setChatLog(JSON.parse(data));
+  }, []);
+  // Storing chatLog state in localStorage
+  useEffect(() => {
+    if (chatLog.length > 0)
+      window.localStorage.setItem("chatLogs", JSON.stringify(chatLog));
+  }, [chatLog]);
+
+  return (
+    <div className="app flex flex-col w-[100vw] h-[100vh] bg-[#343541] items-center justify-between">
+      {/* Chat Box */}
+      <div
+        ref={chatRef}
+        className="chat-container max-w-[980px] mt-5 text-white flex flex-col gap-3 flex-1 w-full h-full overflow-y-scroll overscroll-none scrollbar-hide pb-5 scroll-smooth"
+      >
+        {session && chatLog.length ? (
+          <>
+            {chatLog?.map((message: any, index: any) => (
+              <ChatMessage key={index} message={message} />
+            ))}
+            <div ref={messagesEndRef} />
+          </>
+        ) : session ? (
+          <Intro />
+        ) : (
+          <Welcome />
+        )}
+      </div>
+      {/* Form */}
+
+      <form
+        ref={formRef}
+        className="w-full max-w-[980px] my-0 mx-auto p-3 bg-[#40414F] flex items-center"
+        onSubmit={handleSubmit}
+      >
+        <input
+          disabled={!session}
+          className={`w-full text-white text-lg p-3 bg-transparent rounded-md border-none outline-none resize-none ${
+            !session &&
+            "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"
+          }`}
+          name="prompt"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={`${
+            !session ? "Sign in to use ChatGPT" : "Ask ChatGPT anything..."
+          }`}
+        ></input>
+        <button
+          onClick={handleSubmit}
+          type="submit"
+          className=" outline-none border-none cursor-pointer bg-transparent mr-5"
+        >
+          <PaperAirplaneIcon className="w-6 h-6 text-gray-400" />
+        </button>
+      </form>
+      <p className="hidden md:inline-flex text-gray-400 text-sm my-2">
+        ChatGPT Jan 9 Version. Free Research Preview. Our goal is to make AI
+        systems more natural and safe to interact with. Your feedback will help
+        us improve.
+      </p>
+    </div>
+  );
+}
+
+export default ChatContainer;
+
+```
+
+### Update pages/components/Sidebar.tsx:
+
+```
+import React, { useContext, useEffect } from "react";
+import {
+  ArrowRightOnRectangleIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
+import { ChatContext } from "../context/ChatContext";
+import { signIn, signOut } from "next-auth/react";
+import { Session } from "next-auth";
+type Props = {
+  session: Session;
+};
+
+function Sidebar({ session }: Props) {
+  const {
+    setChatLog,
+    models,
+    setModels,
+    currentModel,
+    setCurrentModel,
+    temperature,
+    setTemperature,
+  } = useContext(ChatContext);
+
+  const clearChat = () => {
+    setChatLog([]);
+    localStorage.clear();
+  };
+  const getEngines = async () => {
+    const response = await fetch("/api/models");
+    const data = await response.json();
+    // console.log(data.models);
+    setModels(data.models);
+  };
+  // Run once on app load
+  useEffect(() => {
+    getEngines();
+  }, []);
+
+  // const { data: session } = useSession();
+  // console.log(session);
+  return (
+    <aside className="sidemenu w-80 text-white bg-[#202123] text-left flex flex-col justify-between">
+      <div>
+        {/* New Chat */}
+        <div
+          className="sidemenu-btn m-2 border border-gray-700 rounded-lg"
+          onClick={clearChat}
+        >
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"
+            }`}
+          >
+            <PlusIcon className="w-4 h-4" />{" "}
+            <span className="text-sm">New chat</span>
+          </button>
+        </div>
+        {/* Select a Model */}
+        <div className="models m-2 space-y-2">
+          <h4 className="p-1 text-md">Model</h4>
+          <select
+            disabled={!session}
+            onChange={(e) => setCurrentModel(e.target.value)}
+            value={currentModel}
+            className={`w-full p-3 m-0 text-sm text-white bg-[#202123] border border-gray-700 rounded-lg transition ease-in-out focus:text-white focus:bg-[#202123] focus:border focus:outline-none ${
+              !session &&
+              "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"
+            }`}
+          >
+            {models &&
+              models?.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.id}
+                </option>
+              ))}
+          </select>
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
+            onClick={() => setCurrentModel("text-davinci-003")}
+          >
+            <span className="text-sm">Smart - Davinci</span>
+          </button>
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
+            onClick={() => setCurrentModel("code-cushman-001")}
+          >
+            <span className="text-sm">Code - Cushman</span>
+          </button>
+          <p className="text-xs p-1">
+            The model parameter controls the engine used to generate the
+            response. Davinci produces the best results.
+          </p>
+        </div>
+        {/* Select Temperature Parameter */}
+        <div className="temperature m-2 space-y-2">
+          <div className="flex w-full items-center justify-between">
+            <h4 className="p-1 text-md">Temperature</h4>{" "}
+            <span className="text-sm p-3 border border-gray-700 rounded-lg">
+              {temperature}
+            </span>
+          </div>
+          <div className="rounded-lg shadow-lg max-w-[300px]">
+            <div className="py-2 px-4">
+              <input
+                disabled={!session}
+                className={`w-full accent-indigo-600 cursor-pointer ${
+                  !session &&
+                  "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+                }`}
+                type="range"
+                name="temperature"
+                value={temperature}
+                min="0.1"
+                max="1"
+                onChange={(e) => setTemperature(e.target.value)}
+                step="0.1"
+              />
+              <div className="-mt-2 flex w-full justify-between">
+                <span className="text-sm text-gray-600">0</span>
+                <span className="text-sm text-gray-600">1</span>
+              </div>
+            </div>
+          </div>
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
+            onClick={() => setTemperature("0")}
+          >
+            <span className="text-sm">0 - Deterministic & Repetitive</span>
+          </button>
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
+            onClick={() => setTemperature("0.5")}
+          >
+            <span className="text-sm">0.5 - Balanced</span>
+          </button>
+          <button
+            disabled={!session}
+            className={`flex w-full items-center space-x-3 p-3 rounded-lg bg-white/30 hover:bg-white/10 transition-all duration-250 ease-in ${
+              !session &&
+              "from-gray-300 to-gray-500 border-gray-200 text-gray-300 cursor-not-allowed"
+            }`}
+            onClick={() => setTemperature("1")}
+          >
+            <span className="text-sm">1 - Creative</span>
+          </button>
+          <p className="text-xs p-1">
+            The temperature parameter controls the randomness of the model. 0 is
+            the most deterministic, 1 is the most creative.
+          </p>
+        </div>
+      </div>
+      <div className="sidemenu-btn m-2  border-t py-2">
+        {session && (
+          <button
+            className="flex w-full items-center space-x-3 p-3 rounded-md hover:bg-white/10"
+            onClick={clearChat}
+          >
+            <TrashIcon className="w-4 h-4" />{" "}
+            <span className="text-sm">Clear conversations</span>
+          </button>
+        )}
+
+        <button
+          className="flex w-full items-center space-x-3 p-3 rounded-md hover:bg-white/10"
+          onClick={!session ? () => signIn() : () => signOut()}
+        >
+          <ArrowRightOnRectangleIcon className="w-4 h-4" />{" "}
+          {session ? (
+            <span className="text-sm">Log out</span>
+          ) : (
+            <span className="text-sm">Log In</span>
+          )}
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+export default Sidebar;
 
 ```
 
@@ -2791,3 +3588,14 @@ Choose your project to be linked to.
 vercel add env
 Enter the name and value of the variable
 ```
+
+## Testing:
+
+By default Model:"text-davinci-002" and Temperature:"0.7".
+You can select a model of your choice and set the temperature.
+
+Test example: Hi. Can you create a sitemap for a coffee shop website and also create some copy for each page?
+
+Test example: I want to cook something with seafood today, can you give me 10 dishes as options?
+Can I have a shopping list for the first two options?
+What are the cooking steps to make seafood chowder?

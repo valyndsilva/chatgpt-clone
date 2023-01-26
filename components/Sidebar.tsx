@@ -1,17 +1,17 @@
 import React, { useContext, useEffect } from "react";
 import {
   ArrowRightOnRectangleIcon,
-  ArrowTopRightOnSquareIcon,
-  ChatBubbleOvalLeftIcon,
   PlusIcon,
-  SunIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { ChatContext } from "../context/ChatContext";
-import { useSession, signIn, signOut } from "next-auth/react";
-type Props = {};
+import { signIn, signOut } from "next-auth/react";
+import { Session } from "next-auth";
+type Props = {
+  session: Session;
+};
 
-function Sidebar({}: Props) {
+function Sidebar({ session }: Props) {
   const {
     setChatLog,
     models,
@@ -37,7 +37,7 @@ function Sidebar({}: Props) {
     getEngines();
   }, []);
 
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
   // console.log(session);
   return (
     <aside className="sidemenu w-80 text-white bg-[#202123] text-left flex flex-col justify-between">
@@ -51,7 +51,8 @@ function Sidebar({}: Props) {
             disabled={!session}
             className={`flex w-full items-center space-x-3 p-3 hover:bg-white/10 transition-all duration-250 ease-in ${
               !session &&
-              "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"}`}
+              "from-gray-300 to-gray-500 text-gray-300 cursor-not-allowed"
+            }`}
           >
             <PlusIcon className="w-4 h-4" />{" "}
             <span className="text-sm">New chat</span>

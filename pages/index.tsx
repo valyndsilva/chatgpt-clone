@@ -1,13 +1,13 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { ChatContainer, Sidebar } from "../components";
-import { v4 } from "uuid";
+import { getSession } from "next-auth/react";
+import { Session } from "next-auth";
+import { GetServerSideProps } from "next";
 interface Props {
-  // uniqueUserId: string;
-  // uniqueAiId: string;
-  uniqueId: string;
+  session: Session;
 }
-const Home = ({ uniqueId }: Props) => {
+const Home = ({ session }: Props) => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -24,10 +24,10 @@ const Home = ({ uniqueId }: Props) => {
       </Head>
 
       <main className="flex box-border">
-        <Sidebar />
+        <Sidebar session={session} />
         {/* <ChatContainer uniqueUserId={uniqueUserId} uniqueAiId={uniqueAiId} /> */}
         {/* <ChatContainer uniqueId={uniqueId} /> */}
-         <ChatContainer />
+        <ChatContainer session={session} />
       </main>
     </div>
   );
@@ -35,33 +35,12 @@ const Home = ({ uniqueId }: Props) => {
 
 export default Home;
 
-export function getServerSideProps() {
-  const generateUniqueId = () => {
-    const uuId = v4();
-    console.log(uuId);
-    return uuId;
-  };
-  const uniqueId = generateUniqueId();
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const session = await getSession(context);
 
-  // const generateUniqueId = (isAi: any = false) => {
-  //   const uuId = v4();
-  //   console.log(uuId);
-  //   const prefix = isAi ? "AI_" : "USER_";
-  //   const id = prefix + v4();
-  //   console.log({ id });
-  //   return id;
-  // };
-
-  // const uniqueUserId = generateUniqueId();
-  // console.log(uniqueUserId);
-
-  // const uniqueAiId = generateUniqueId(true);
-  // console.log(uniqueAiId);
   return {
     props: {
-      // uniqueUserId,
-      // uniqueAiId,
-      uniqueId,
+      session,
     },
   };
-}
+};

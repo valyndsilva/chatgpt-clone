@@ -18,14 +18,13 @@ interface Chat {
   setTemperature: (temperature: string) => void;
   uniqueId: any;
   setUniqueId: (uniqueId: any) => void;
-  // generateUniqueId: (isAi?: boolean) => string;
 }
 
 export const ChatContext = createContext<Chat>({} as Chat);
 
 export function ChatProvider({ children }: ChatProviderProps) {
   const [models, setModels] = useState([]);
-  const [currentModel, setCurrentModel] = useState("text-davinci-002");
+  const [currentModel, setCurrentModel] = useState("text-davinci-003");
   const [input, setInput] = useState("");
   const [temperature, setTemperature] = useState("0.7");
   const [uniqueId, setUniqueId] = useState("");
@@ -46,7 +45,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
   //   },
   // ]);
   const [chatLog, setChatLog] = useState([]);
- 
 
   return (
     <ChatContext.Provider
@@ -63,7 +61,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
         setTemperature,
         uniqueId,
         setUniqueId,
-        // generateUniqueId,
       }}
     >
       {children}
