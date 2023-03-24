@@ -73,7 +73,9 @@ function Intro({}: Props) {
           <p
             className="bg-gray-700/50 rounded-md p-2 cursor-pointer hover:bg-gray-700"
             onClick={() =>
-              setPrompt("Got any creative ideas for a 10 year old's birthday?")
+              onExampleClick(
+                "Got any creative ideas for a 10 year old's birthday?"
+              )
             }
           >
             "Got any creative ideas for a 10 year old's birthday?"
@@ -81,7 +83,7 @@ function Intro({}: Props) {
           <p
             className="bg-gray-700/50 rounded-md p-2 cursor-pointer hover:bg-gray-700"
             onClick={() =>
-              setPrompt("How do I make a HTTP request in Javascript?")
+              onExampleClick("How do I make a HTTP request in Javascript?")
             }
           >
             "How do I make a HTTP request in Javascript?"

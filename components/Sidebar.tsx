@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import {
+  ArrowRightOnRectangleIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
 import { ChatContext } from "../context/ChatContext";
@@ -299,7 +300,7 @@ function Sidebar({}: Props) {
             </div>
           ) : (
             <>
-              <span className="text-sm">Log In</span>
+            <ArrowRightOnRectangleIcon className="w-6 h-6 "/> <span className="text-sm">Log In</span>
             </>
           )}
         </button>

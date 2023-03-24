@@ -5,12 +5,21 @@ type Props = {};
 
 function Welcome({}: Props) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 space-y-2 md:space-y-6 items-center justify-center w-full h-full">
-      <div className="col-span-1 md:col-span-1 w-full p-5 space-y-8 flex flex-col items-center justify-center">
-        <h2 className="text-lg md:text-3xl font-semibold">
+    <div className=" md:bg-transparent flex flex-col lg:flex-row  space-y-2 md:space-y-6 items-center justify-center w-full h-full">
+      <div className="lg:hidden flex-col items-center justify-center">
+        <Image
+          src="/assets/chatgpt-logo.png"
+          width={150}
+          height={150}
+          className="rounded-full"
+          alt="chatgpt image"
+        />
+      </div>
+      <div className=" w-full p-5 space-y-8 flex flex-col items-center justify-center">
+        <h2 className="text-xl lg:text-3xl font-semibold">
           Welcome to ChatGPT!
         </h2>
-        <p className="max-w-[350px] text-md font-medium leading-7 tracking-wider text-center">
+        <p className="max-w-[350px] text-md font-medium leading-7 text-center">
           ChatGPT: Optimizing Language Models for Dialogue interacts in a
           conversational way. The dialogue format makes it possible for ChatGPT
           to answer followup questions, admit its mistakes, challenge incorrect
@@ -18,14 +27,15 @@ function Welcome({}: Props) {
         </p>
         <button
           onClick={() => signIn("google")}
-          className={`flex items-center p-4 rounded-lg bg-[#842984] hover:bg-white/10 transition-all duration-250 ease-in`}
+          className={`flex items-center p-4 rounded-lg border border-gray-700 bg-[#19A67E] hover:bg-white/10 transition-all duration-250 ease-in`}
         >
           Try ChatGPT
         </button>
       </div>
-      <div className="hidden md:col-span-1 w-full md:inline-flex flex-col items-center justify-center">
+      <div className="hidden w-full lg:inline-flex flex-col items-center justify-center">
         <Image
-          src="/chatgpt.jpg"
+          className="rounded-full"
+          src="/assets/chatgpt-logo.png"
           width={300}
           height={300}
           alt="chatgpt image"
