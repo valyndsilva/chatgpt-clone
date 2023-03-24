@@ -21,7 +21,7 @@ function ChatContainer({ session }: Props) {
       </div>
 
       <p className="hidden md:inline-flex text-gray-400 text-sm m-2">
-        ChatGPT Jan 9 Version. Free Research Preview. Our goal is to make AI
+        ChatGPT Mar 14 Version. Free Research Preview. Our goal is to make AI
         systems more natural and safe to interact with. Your feedback will help
         us improve.
       </p>
