@@ -17,7 +17,7 @@ function Welcome({}: Props) {
           premises, and reject inappropriate requests.
         </p>
         <button
-          onClick={() => signIn()}
+          onClick={() => signIn("google")}
           className={`flex items-center p-4 rounded-lg bg-[#842984] hover:bg-white/10 transition-all duration-250 ease-in`}
         >
           Try ChatGPT

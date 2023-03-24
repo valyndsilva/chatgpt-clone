@@ -1,22 +1,30 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { configuration } from "../../utils/constants";
-import { OpenAIApi } from "openai";
+import openai from "../../utils/constants";
 
 type Data = {
-  models: any;
+  // models: any;
+  modelOptions: Option[];
 };
 
-const openai = new OpenAIApi(configuration);
+type Option = {
+  label: string;
+  value: string;
+};
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  const response = await openai.listEngines();
-  //   console.log({ response });
-  //   console.log(response.data.data);
+  const response = await openai.listModels();
+  const models = response.data.data;
+  if (models === undefined) throw new Error("No model engines found");
 
-  if (response === undefined) throw new Error("No engines found");
+  const modelOptions = models.map((model) => ({
+    label: model.id,
+    value: model.id,
+  }));
 
-  res.status(200).json({ models: response.data.data });
+  // res.status(200).json({ models });
+
+  res.status(200).json({ modelOptions });
 }

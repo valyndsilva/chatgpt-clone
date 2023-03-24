@@ -17,19 +17,15 @@ const Home = ({ session }: Props) => {
     !mounted && null;
   }
   return (
-    <div>
+    <>
       <Head>
         <title>ChatGPT Clone</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
-      <main className="flex box-border">
-        <Sidebar session={session} />
-        {/* <ChatContainer uniqueUserId={uniqueUserId} uniqueAiId={uniqueAiId} /> */}
-        {/* <ChatContainer uniqueId={uniqueId} /> */}
+      <main className="flex flex-col flex-1 items-center justify-center h-screen scroll-y-auto">
         <ChatContainer session={session} />
       </main>
-    </div>
+    </>
   );
 };
 

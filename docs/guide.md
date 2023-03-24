@@ -116,6 +116,157 @@ Now test the api route by going to http://localhost:3000/api/chatgpt
 
 You should see a suggestion result.
 
+Another way of doing this is:
+
+Create utils/constants.ts:
+
+```
+import { Configuration, OpenAIApi } from "openai";
+
+// Requesting organization
+const configuration = new Configuration({
+  organization: process.env.OPENAI_ORG_ID,
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+
+const openai = new OpenAIApi(configuration);
+
+export default openai;
+
+
+```
+
+Next, create utils/queryApi.ts:
+
+```
+import openai from "./constants";
+
+const query = async (
+  prompt: string,
+  chatId: string,
+  currentModel: string,
+  temperature: string
+) => {
+  const response = await openai
+    .createCompletion({
+      model: currentModel,
+      prompt,
+      temperature: Number(`${temperature}`),
+      max_tokens: 100,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0,
+    })
+    .then((response) => response.data.choices[0].text)
+    .catch((err) => {
+      `ChatGPT was unable to find an answer for that prompt. Error: ${err.message}`; // to avoid 429 error too many request to avoid rate limitations
+    });
+  return response;
+};
+
+export default query;
+```
+
+To add a doc to firebase collection from server end you would need access to firebase admin.
+
+Go to Project Settings > Service Accounts > Node.js > Generate a new private key (It downloads the file). Rename the file to serviceAccountKey.json.
+Copy the file contents and go to https://www.textfixer.com/tools/remove-line-breaks.php > Paste > Remove Line Breaks > Copy
+
+Got to .env.local and create FIREBASE_SERVICE_ACCOUNT_KEY=paste content here
+
+And delete the serviceAccountKey.json or add it to gitignore.
+
+```
+npm install firebase-admin
+```
+
+Create firebaseAdmin.ts:
+
+```
+import admin from "firebase-admin";
+import { getApps } from "firebase/app";
+
+// const serviceAccount = require("./serviceAccountKey.json");
+const serviceAccount = JSON.parse(
+  process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string
+);
+
+if (!getApps().length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    projectId: process.env.PROJECT_ID,
+  });
+}
+
+const adminDb = admin.firestore();
+
+export { adminDb };
+
+
+```
+
+Then create pages/api/chatgpt.tsx:
+
+```
+import type { NextApiRequest, NextApiResponse } from "next";
+import { configuration } from "../../utils/constants";
+import { OpenAIApi } from "openai";
+import query from "../../utils/queryApi";
+import admin from "firebase-admin";
+import { adminDb } from "../../firebaseAdmin";
+type Data = {
+  suggestion: string;
+};
+
+const openai = new OpenAIApi(configuration);
+// const response = await openai.listEngines();
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
+
+  const { prompt, chatId, currentModel, temperature, session } = req.body;
+  if (!prompt)
+    return res.status(400).json({ suggestion: "Please enter a prompt" });
+
+  if (!chatId)
+    return res.status(400).json({ suggestion: "Please enter a valid chatId!" });
+
+  // ChatGPT Query
+  const response = await query(prompt, chatId, currentModel, temperature);
+  // console.log("response:", response);
+
+  // Need access to firebase Admin to add doc to messages collection from server end. Create firebaseAdmin.ts
+  const message: Message = {
+    text: response || "ChatGPT was unable to find an answer for that prompt",
+    createdAt: admin.firestore.Timestamp.now(),
+    user: {
+      _id: "ChatGPT",
+      name: "ChatGPT",
+      avatar: "/public/images/chatgpt-logo.png",
+    },
+  };
+
+  await adminDb
+    .collection("users")
+    .doc(session?.user?.email!)
+    .collection("chats")
+    .doc(chatId)
+    .collection("message")
+    .add(message);
+  res.status(200).json({ suggestion: message.text });
+
+}
+
+```
+Install useSWR forData Fetching the models and react-select:
+```
+npm i swr 
+npm i --save react-select
+```
+
 ## Update pages/index.tsx:
 
 ```
@@ -2251,15 +2402,44 @@ export default Sidebar;
 npm install next-auth
 ```
 
+### Generate NEXT SECRET to use as JWT_SECRET in .env.local:
+
+openssl rand -base64 32
+
+### Create pages/api/auth/[...nextauth].tsx:
+
+```
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+
+export default NextAuth({
+  providers: [
+    // OAuth authentication providers...
+    GoogleProvider({
+      clientId: process.env.GOOGLE_ID as string,
+      clientSecret: process.env.GOOGLE_SECRET as string,
+    }),
+  ],
+  secret: process.env.JWT_SECRET,
+});
+
+```
+
 ### Setup Firebase:
 
-Go to https://console.firebase.google.com/ Add new project: amazon-clone > Continue Project settings > </> (Click on the web icon to Add Firebase to your web app) Register app: amazon-clone > Register app
+#### Install Firebase into your project:
 
 ```
 npm install firebase
 ```
 
-#### Create firebaseConfig.ts in the root:
+#### Setup Firebase Authentication:
+
+Go to https://console.firebase.google.com/ Add new project: chatgpt-clone > Continue Project settings > </> (Click on the web icon to Add Firebase to your web app) Register app: chatgpt-clone > Register app
+
+Next go to Build > Authentication > Get Started >Sign-in providers: Google > Choose Project support email > Save
+
+##### Create firebaseConfig.ts in the root:
 
 Copy the code provided by firebase to initialize Firebase and begin using the SDKs for the products you'd like to use.
 
@@ -2284,34 +2464,69 @@ const app = initializeApp(firebaseConfig);
 
 ```
 
-### Generate NEXT SECRET to use as JWT_SECRET in .env.local:
-
-openssl rand -base64 32
-
-### Create pages/ap/auth/[...nextauth].tsx:
+###### Update firebaseConfig.ts to reflect the NextJS setup:
 
 ```
-import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+// Import the functions you need from the SDKs you need
+import { getApp, getApps, initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-export default NextAuth({
-  providers: [
-    // OAuth authentication providers...
-    GoogleProvider({
-      clientId: process.env.GOOGLE_ID as string,
-      clientSecret: process.env.GOOGLE_SECRET as string,
-    }),
-  ],
-  secret: process.env.JWT_SECRET,
-});
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDdm8pNWZ03UGdqPGszfdzboy68HykA5zs",
+  authDomain: "chatgpt-clone-cba9d.firebaseapp.com",
+  projectId: "chatgpt-clone-cba9d",
+  storageBucket: "chatgpt-clone-cba9d.appspot.com",
+  messagingSenderId: "886038362633",
+  appId: "1:886038362633:web:74819ee802b5a7568816d8",
+};
+
+// Initialize Firebase
+// const app = initializeApp(firebaseConfig);
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+export { db };
 
 ```
 
-### Google Authentication
+#### Google Authentication
 
-Next go to Build > Authentication > Get Started >Sign-in providers: Google > Choose Project support email > Save
+Go to Google Cloud Console -> Create New Project -> APIs & Services -> Setup OAuth consent screen and Create Credentials for OAuth Client ID
 
-Update pages/\_app.tsx:
+Add the Authorized JavaScript origins:
+http://localhost:3000
+
+Authorized redirect URIs:
+Ex:http://localhost:3000/api/auth/callback/google
+
+Copy the Client ID and Client Secret and paste into .env.local file.
+GOOGLE_ID=
+GOOGLE_SECRET=
+
+#### Setup Firebase Firestore Database:
+
+Firestore Database -> Get Started -> Start in Test mode -> Select loaction -> Enable
+
+### Create a Realtime connection with Firestore:
+
+https://www.npmjs.com/package/react-firebase-hooks
+
+```
+npm install react-firebase-hooks
+```
+
+Go to [Cloud Firestore Hooks](https://github.com/csfrequency/react-firebase-hooks/tree/09bf06b28c82b4c3c1beabb1b32a8007232ed045/firestore)
+
+Update Sidebar.tsx:
+
+```
+
+```
+
+### Update pages/\_app.tsx:
 
 ```
 import "../styles/globals.css";
@@ -3591,6 +3806,10 @@ vercel add env
 Enter the name and value of the variable
 ```
 
+## Implementing Firebase Admin:
+
+This allows a server to directly write into the firebase database.
+
 ## Testing Scenarios:
 
 By default Model:"text-davinci-002" and Temperature:"0.7".
@@ -3682,57 +3901,74 @@ Respond to this message: [message here]
 Please make this sound [emotion]:[text here]
 
 ### Turn Text into Blog Post:
+
 Write this in blog post form: [blog title or text here]
 Write a three paragraph blog post on: [blog title or text here]
 
 ### Summarize Text to Bullet points:
+
 Summarize this text in bullet point form: [text here]
 
 ### Compare and Contrast Text or Pros and Cons List:
+
 Compare and contrast the following: [text here]
 
 ### Translate Text:
+
 Write the following in [language]: [your text]
 
 ### Celebrity or Personality Styles:
+
 Write the following the the style of [Celebrity name]: [text here]
 
 ### Create Analogies:
+
 Create an analogy for [specific word or text]
 
 ### Create a List:
+
 Please create a list of:[topic here]
 
 ### Generate Dialogue:
+
 Write a [length] line dialogue between [subject1] and [subject2]
 
 ### Complex Concepts:
+
 Explain the following concepts at a 5th grade level: [complex topic]
 
 ### Generate Recipe:
+
 Provide a recipe for the following: [recipe name]
 Provide a recipe for the following: [ingredient], [ingredient] and [ingredient]
 I have [ingredients name]. What can I make with these?
 
 ### Solving Problems:
+
 Solve the following problem: [problem]
 Solve the following problem and provide an explaination: [problem]
 
 ### Problem Creation:
+
 Generate a scenario of a problem faeturing: [subject matter]
 
 ### Create Code or Code Snippets:
+
 Create [what you want the code to be used for] in [language]
 
 ### Create Jokes:
- Write a joke based on: [joke topic]
 
- ### Create Poems:
- Write an original poem about: [subject matter]
+Write a joke based on: [joke topic]
 
- ### Create Music:
- Write a [intrument] chord progression in the style [musician name]
- Write lyrics for the following beat: [music]
+### Create Poems:
 
- ### Create Social Media Posts:
- Please provide me [number] tweet ideas that pertain to:[topic]
+Write an original poem about: [subject matter]
+
+### Create Music:
+
+Write a [intrument] chord progression in the style [musician name]
+Write lyrics for the following beat: [music]
+
+### Create Social Media Posts:
+
+Please provide me [number] tweet ideas that pertain to:[topic]

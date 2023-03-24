@@ -1,5 +1,10 @@
 export { default as ChatContainer } from "./ChatContainer";
-export { default as ChatMessage } from "./ChatMessage";
+export { default as Message } from "./Message";
+export { default as ChatRow } from "./ChatRow";
+export { default as Chat } from "./Chat";
+export { default as ChatInput } from "./ChatInput";
 export { default as Sidebar } from "./Sidebar";
 export { default as Welcome } from "./Welcome";
 export { default as Intro } from "./Intro";
+export { default as ModelSelection } from "./ModelSelection";
+export { default as RootLayout } from "./RootLayout";

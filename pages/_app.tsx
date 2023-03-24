@@ -4,6 +4,7 @@ import { ChatProvider } from "../context/ChatContext";
 import { SessionProvider } from "next-auth/react";
 import { Session } from "next-auth";
 import { useEffect, useState } from "react";
+import { RootLayout } from "../components";
 
 function MyApp({
   Component,
@@ -16,11 +17,20 @@ function MyApp({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+   useEffect(() => {
+     const use = async () => {
+       (await import("tw-elements")).default;
+     };
+     use();
+   }, []);
   if (!mounted) return null;
   return (
     <SessionProvider session={pageProps.session}>
       <ChatProvider>
-        <Component {...pageProps} />
+        <RootLayout>
+          <Component {...pageProps} />
+        </RootLayout>
       </ChatProvider>
     </SessionProvider>
   );
