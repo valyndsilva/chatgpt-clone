@@ -15,9 +15,7 @@ import useSWR from "swr";
 import ModelSelection from "./ModelSelection";
 import { useCollection } from "react-firebase-hooks/firestore";
 import ChatRow from "./ChatRow";
-import {
-  PlusIcon,
-} from "@heroicons/react/24/outline";
+import { PlusIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -31,14 +29,14 @@ export default function ChatInput({ chatId }: Props) {
   const userEmail = session?.user?.email!;
   // console.log({ userEmail });
   // const [prompt, setPrompt] = useState<string>("");
- const { prompt, setPrompt, temperature, setTemperature } =
-   useContext(ChatContext);
+  const { prompt, setPrompt, temperature, setTemperature } =
+    useContext(ChatContext);
 
   const { data: model, mutate: setModel } = useSWR("model", {
     fallbackData: "text-davinci-003",
   });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     console.log("handleSubmit triggered!");
     if (!prompt) return;
